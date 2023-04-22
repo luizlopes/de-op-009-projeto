@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "aws" {
-  profile    = "bootcamp" # Aqui vai o "profile" que você configurou as credenciais da AWS.
+  # profile    = "bootcamp" # Aqui vai o "profile" que você configurou as credenciais da AWS.
   region     = "us-east-1"
 }
 
