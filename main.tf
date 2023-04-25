@@ -52,28 +52,61 @@ resource "aws_iam_role" "iam_for_lambda" {
 
 # Crio uma permissão para o lambda poder criar log streams 
 # e enviar logs para o cloudwatch
-# resource "aws_iam_policy" "function_logging_policy" {
-#   name   = "function-logging-policy"
-#   policy = jsonencode({
-#     "Version" : "2012-10-17",
-#     "Statement" : [
-#       {
-#         Action : [
-#           "logs:CreateLogStream",
-#           "logs:PutLogEvents"
-#         ],
-#         Effect : "Allow",
-#         Resource : "arn:aws:logs:*:*:*"
-#       }
-#     ]
-#   })
-# }
+resource "aws_iam_policy" "function_logging_policy" {
+  name   = "function-logging-policy"
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        Action : [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect : "Allow",
+        Resource : "arn:aws:logs:*:*:*"
+      },
+      {
+          Effect: "Allow",
+          Action: [
+              "s3:*"
+          ],
+          Resource: "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "function_getobject_policy" {
+  name   = "function-getobject-policy"
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        Action : [
+          "s3:GetObject"
+        ],
+        Effect : "Allow",
+        Resource : aws_s3_bucket.my_bucket.arn
+      }
+    ]
+  })
+}
 
 # Aqui eu adiciono mais uma policy à role do lambda. 
 # Posso adicionar quantas forem necessárias
+# resource "aws_iam_role_policy_attachment" "function_get_object_attachment" {
+#   role = aws_iam_role.iam_for_lambda.id
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+# }
+
+# resource "aws_iam_role_policy_attachment" "function_logging_policy_attachment" {
+#   role = aws_iam_role.iam_for_lambda.id
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+# }
+
 resource "aws_iam_role_policy_attachment" "function_logging_policy_attachment" {
   role = aws_iam_role.iam_for_lambda.id
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+  policy_arn = aws_iam_policy.function_logging_policy.arn
 }
 
 data "archive_file" "lambda" {
@@ -94,11 +127,22 @@ resource "aws_lambda_function" "my_lambda" {
 
   runtime = var.versao_python
 
+  memory_size = 2048
+  timeout = 600
+
+  layers = ["arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:6"]
+
 # Coloco nos environments tudo que eu quiser que minha função lambda tenha acesso em 
 # tempo de execução. Por exemplo: URL de banco de dados, usuário, senha...
   environment {
     variables = {
-      variavel01 = "valor01"
+      #JDBC_DATABASE_URL = "jdbc:postgresql://${aws_db_instance.rds.address}:${aws_db_instance.rds.port}/${aws_db_instance.rds.identifier}"
+      DATABASE_HOST = aws_db_instance.postgres.address
+      DATABASE_USERNAME = aws_db_instance.postgres.username
+      DATABASE_PASSWORD = aws_db_instance.postgres.password
+      DATABASE_NAME = aws_db_instance.postgres.db_name
+      DATABASE_PORT = aws_db_instance.postgres.port
+      BUCKET_NAME = aws_s3_bucket.my_bucket.bucket
     }
   }
 

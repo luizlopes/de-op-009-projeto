@@ -1,3 +1,4 @@
+import os
 import psycopg2
 
 def lambda_metodo(event, context):
@@ -5,11 +6,13 @@ def lambda_metodo(event, context):
     print(event)
     print("Sou uma função lambda que subi com o terraform! vamo simbora!");
 
-    conn = psycopg2.connect(database="mydb",
-                        host="banquinho.c1hyijajfphq.us-east-1.rds.amazonaws.com",
-                        user="username",
-                        password="password",
-                        port="5432")
+    conn = psycopg2.connect(
+        host=os.environ['DATABASE_HOST'],
+        port=os.environ['DATABASE_PORT'],
+        database=os.environ['DATABASE_NAME'],
+        user=os.environ['DATABASE_USERNAME'],
+        password=os.environ['DATABASE_PASSWORD']
+    )
     
     cursor = conn.cursor()
 
