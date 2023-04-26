@@ -37,15 +37,7 @@ jobs:
             --implementation cp \
             --python 3.9 \
             --only-binary=:all: --upgrade \
-            psycopg2-binary
-
-      - name: Create lambda function Zip package
-        run: |
-          cd lambda_function
-          zip -r ../lambda_function-package.zip .
-
-      - name: List .zip files
-        run: ls *.zip
+            -r requirements.txt
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
